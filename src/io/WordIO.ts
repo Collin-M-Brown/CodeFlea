@@ -10,7 +10,6 @@ import {
 import * as editor from "../utils/editor";
 import SubjectIOBase, { IterationOptions } from "./SubjectIOBase";
 import { Direction, TextObject } from "../common";
-import { setVirtualColumn, getVirtualColumn } from "../skipState";
 
 function iterVertically(
     document: vscode.TextDocument,
@@ -23,7 +22,7 @@ function iterVertically(
                 options.startingPosition,
                 options.direction
             );
-            const column = getVirtualColumn();
+            const column = common.getVirtualColumn();
             while (cont) {
                 cont = false;
                 
@@ -72,7 +71,7 @@ function iterHorizontally(
             
             if (wordRange) {
                 if (!first || options.currentInclusive) {
-                    setVirtualColumn(searchPosition.character);
+                    common.setVirtualColumn(searchPosition.character);
                     yield wordRange;
                 }
                 

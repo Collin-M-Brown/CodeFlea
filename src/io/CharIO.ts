@@ -6,11 +6,12 @@ import {
     directionToDelta,
     directionToFactor,
     invert,
+    getVirtualColumn,
+    setVirtualColumn,
 } from "../common";
 import SubjectIOBase, { IterationOptions } from "./SubjectIOBase";
 import Seq, { seq } from "../utils/seq";
 import { rangeToPosition } from "../utils/selectionsAndRanges";
-import { getVirtualColumn, setVirtualColumn } from "../skipState";
 
 function getContainingRangeAt(
     document: TextDocument,

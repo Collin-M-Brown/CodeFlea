@@ -2,8 +2,9 @@ import { Config } from "./config";
 import * as vscode from "vscode";
 
 export type TextObject = vscode.Range;
-
 export type DirectionOrNearest = Direction | "nearest";
+export let lastSkip: Skip | undefined = undefined;
+export let column: number = 0;
 
 export type SubTextRange = {
     text: string;
@@ -77,3 +78,19 @@ export type ColourString = `#${string}`;
 export type Skip =
     | { kind: "SkipTo"; char: Char }
     | { kind: "SkipOver"; char?: Char };
+
+export function setLastSkip(skip: Skip | undefined): void {
+    lastSkip = skip;
+}
+
+export function getLastSkip(): Skip | undefined {
+    return lastSkip;
+}
+
+export function setVirtualColumn(newColumn: number): void {
+    column = newColumn;
+}
+
+export function getVirtualColumn(): number {
+    return column;
+}

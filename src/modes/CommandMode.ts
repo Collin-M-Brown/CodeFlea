@@ -10,7 +10,6 @@ import SubjectBase from "../subjects/SubjectBase";
 import { SubjectAction } from "../subjects/SubjectActions";
 import JumpInterface from "../handlers/JumpInterface";
 import { SubjectName } from "../subjects/SubjectName";
-import { setLastSkip, getLastSkip } from "../skipState";
 
 export default class CommandMode extends modes.EditorMode {
 
@@ -24,7 +23,7 @@ export default class CommandMode extends modes.EditorMode {
     readonly decorationTypeBottom: vscode.TextEditorDecorationType;
 
     get statusBarText(): string {
-        const lastSkip = getLastSkip();
+        const lastSkip = common.getLastSkip();
         const skipString =
             lastSkip?.kind === "SkipTo"
                 ? ` | Skip: ${lastSkip.char}`
@@ -193,7 +192,7 @@ export default class CommandMode extends modes.EditorMode {
             return;
         }
 
-        setLastSkip({ kind: "SkipTo", char: skipChar });
+        common.setLastSkip({ kind: "SkipTo", char: skipChar });
 
         await this.subject.skip(direction, { kind: "SkipTo", char: skipChar });
     }
@@ -204,13 +203,13 @@ export default class CommandMode extends modes.EditorMode {
             true
         );
 
-        setLastSkip({ kind: "SkipOver", char: skipChar });
+        common.setLastSkip({ kind: "SkipOver", char: skipChar });
 
         await this.subject.skip(direction, { kind: "SkipOver", char: skipChar });
     }
 
     async repeatLastSkip(direction: common.Direction): Promise<void> {
-        const lastSkip = getLastSkip();
+        const lastSkip = common.getLastSkip();
         if (!lastSkip) {
             return;
         }
