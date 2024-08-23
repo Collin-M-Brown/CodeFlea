@@ -6,6 +6,9 @@ import { positionToRange, rangeToPosition } from "../utils/selectionsAndRanges";
 import SubjectIOBase, { IterationOptions } from "./SubjectIOBase";
 import { Direction, TextObject } from "../common";
 
+const outputChannel = vscode.window.createOutputChannel("CodeGrassHopperLogs");
+let iter = 0;
+
 type BlockIterationOptions = IterationOptions & {
     indentationLevel?: common.IndentationRequest;
     restrictToCurrentScope?: boolean;
@@ -38,82 +41,99 @@ function iterBlockStarts(
     document: vscode.TextDocument,
     options: BlockIterationOptions
 ): Seq<vscode.Position> {
-    return seq(
-        function* () {
-            options = <typeof options>{
-                indentationLevel: "same-indentation",
-                currentInclusive: false,
-                restrictToCurrentScope: false,
-                ...options,
-            };
+    return seq(function* () {
+        options = <typeof options>{
+            indentationLevel: "same-indentation",
+            currentInclusive: false,
+            restrictToCurrentScope: false,
+            ...options,
+        };
 
-            const documentLines = lineUtils.iterLinePairs(document, {
-                ...options,
-                startingPosition: rangeToPosition(
-                    options.startingPosition,
-                    Direction.backwards
-                ),
-            });
+        const documentLines = lineUtils.iterLinePairs(document, {
+            ...options,
+            startingPosition: rangeToPosition(
+                options.startingPosition,
+                Direction.backwards
+            ),
+        });
 
-            const startLine = document.lineAt(
-                options.startingPosition instanceof vscode.Range
-                    ? options.startingPosition.start
-                    : options.startingPosition
+        const startLine = document.lineAt(
+            options.startingPosition instanceof vscode.Range
+                ? options.startingPosition.start
+                : options.startingPosition
+        );
+
+        let foundBlock = false;
+
+        for (const { prev, current } of documentLines) {
+            outputChannel.appendLine(
+                `prev: ${prev?.lineNumber}, current: ${current?.lineNumber}`
             );
+            if (
+                !options.currentInclusive &&
+                current?.lineNumber === startLine.lineNumber
+            ) {
+                continue;
+            }
 
-            for (const { prev, current } of documentLines) {
+            let candidateLine: vscode.TextLine | undefined;
+
+            if (current && lineIsBlockStart(prev, current)) {
+                candidateLine = current;
+            }
+
+            if (candidateLine) {
+                const relativeIndentation =
+                    lineUtils.getRelativeIndentation(
+                        startLine,
+                        candidateLine
+                    );
+
                 if (
-                    !options.currentInclusive &&
-                    current?.lineNumber === startLine.lineNumber
+                    options.restrictToCurrentScope &&
+                    relativeIndentation === "less-indentation"
                 ) {
-                    continue;
+                    return;
                 }
 
-                let candidateLine: vscode.TextLine | undefined;
-
-                if (current && lineIsBlockStart(prev, current)) {
-                    candidateLine = current;
-                }
-
-                if (candidateLine) {
-                    const relativeIndentation =
-                        lineUtils.getRelativeIndentation(
-                            startLine,
-                            candidateLine
-                        );
-
-                    if (
-                        options.restrictToCurrentScope &&
-                        relativeIndentation === "less-indentation"
-                    ) {
-                        return;
-                    }
-
-                    if (
-                        options.indentationLevel === "any-indentation" ||
-                        relativeIndentation === options.indentationLevel
-                    ) {
-                        const point = new vscode.Position(
-                            candidateLine.lineNumber,
-                            candidateLine.firstNonWhitespaceCharacterIndex
-                        );
-
-                        yield point;
-                    }
+                if (
+                    options.indentationLevel === "any-indentation" ||
+                    relativeIndentation === options.indentationLevel
+                ) {
+                    const point = new vscode.Position(
+                        candidateLine.lineNumber,
+                        candidateLine.firstNonWhitespaceCharacterIndex
+                    );
+                    yield point;
+                    foundBlock = true;
                 }
             }
 
-            if (options.direction === Direction.backwards) {
+        }
+        
+        if (!foundBlock && (options.direction === Direction.forwards || options.direction === Direction.backwards)) {
+            outputChannel.appendLine("No block found, trying with less indentation");
+            iter += 1;
+            if (iter > 10) {
                 yield new vscode.Position(0, 0);
             }
+            yield* iterBlockStarts(document, {
+                ...options,
+                indentationLevel: "less-indentation"
+            });
         }
-    );
+
+        if (options.direction === Direction.backwards && !foundBlock) {
+            yield new vscode.Position(0, 0);
+        }
+    });
 }
 
 function findContainingBlockStart(
     document: vscode.TextDocument,
     positionInBlock: vscode.Range | vscode.Position
 ): vscode.Position {
+    iter = 0;
     return (
         iterBlockStarts(document, {
             startingPosition: positionInBlock,
