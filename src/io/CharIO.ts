@@ -10,6 +10,7 @@ import {
 import SubjectIOBase, { IterationOptions } from "./SubjectIOBase";
 import Seq, { seq } from "../utils/seq";
 import { rangeToPosition } from "../utils/selectionsAndRanges";
+import { getVirtualColumn, setVirtualColumn } from "../skipState";
 
 function getContainingRangeAt(
     document: TextDocument,
@@ -25,6 +26,39 @@ function getContainingRangeAt(
     }
 
     return range;
+}
+
+function iterHorizontally(
+    document: TextDocument,
+    options: IterationOptions
+): Seq<TextObject> {
+    return seq(function* () {
+        let offset = document.offsetAt(
+            rangeToPosition(options.startingPosition, invert(options.direction))
+        );
+        let maxOffset = document.getText().length;
+
+        while (offset >= 0 && offset < maxOffset) {
+            const nextOffset = directionToDelta(options.direction)(offset);
+            const range = new Range(
+                document.positionAt(offset),
+                document.positionAt(nextOffset)
+            );
+
+            if (
+                !range.isEmpty &&
+                range.isSingleLine &&
+                (range.start.character === 0 ||
+                    document.getText(range) !== "\n")
+            ) {
+                setVirtualColumn(range.start.character);
+                yield range;
+            }
+             
+
+            offset = nextOffset;
+        }
+    }).skip(options.currentInclusive ? 0 : 1);
 }
 
 function iterAll(
@@ -79,7 +113,8 @@ function iterVertically(
             options.startingPosition,
             Direction.backwards
         );
-
+        const column = getVirtualColumn();
+        current = current.with({ character: column }); 
         while (current) {
             yield getContainingRangeAt(document, current);
 
@@ -98,7 +133,7 @@ function iterScope(
     const startingLine = document.lineAt(
         rangeToPosition(options.startingPosition, options.direction).line
     );
-
+    
     return iterAll(document, options).takeWhile((r) =>
         startingLine.range.contains(r.start)
     );
@@ -112,7 +147,7 @@ export default class CharIO extends SubjectIOBase {
     getClosestObjectTo = getClosestObjectTo;
     iterAll = iterAll;
     iterVertically = iterVertically;
-    iterHorizontally = iterAll;
+    iterHorizontally = iterHorizontally;
     iterScope = iterScope;
 
     getSeparatingText() {

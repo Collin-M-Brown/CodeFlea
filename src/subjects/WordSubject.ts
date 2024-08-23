@@ -5,7 +5,7 @@ export default class WordSubject extends SubjectBase {
     protected subjectIO = new WordIO();
 
     public readonly outlineColour = {
-        dark: "#964d4d",
+        dark: "#04ff00",
         light: "#964d4d",
     } as const;
 

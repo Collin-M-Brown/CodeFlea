@@ -10,6 +10,7 @@ import {
 import * as editor from "../utils/editor";
 import SubjectIOBase, { IterationOptions } from "./SubjectIOBase";
 import { Direction, TextObject } from "../common";
+import { setVirtualColumn, getVirtualColumn } from "../skipState";
 
 function iterVertically(
     document: vscode.TextDocument,
@@ -22,24 +23,26 @@ function iterVertically(
                 options.startingPosition,
                 options.direction
             );
-
+            const column = getVirtualColumn();
             while (cont) {
                 cont = false;
-
+                
                 const nextLine = lineUtils.getNextSignificantLine(
                     document,
                     currentPosition,
                     options.direction
                 );
-
+                
+                currentPosition = currentPosition.with(column);
                 if (nextLine) {
                     const newPosition = currentPosition.with(
-                        nextLine.lineNumber
+                        nextLine.lineNumber,
+                        column
                     );
                     const wordRange = findWordClosestTo(document, newPosition, {
                         limitToCurrentLine: true,
                     });
-
+                    
                     if (wordRange) {
                         yield wordRange;
 
@@ -50,6 +53,47 @@ function iterVertically(
             }
         })
     );
+}
+
+function iterHorizontally(
+    document: vscode.TextDocument,
+    options: IterationOptions
+): Seq<TextObject> {
+    return seq(function* () {
+        let searchPosition: vscode.Position | undefined = rangeToPosition(
+            options.startingPosition,
+            options.direction
+        );
+
+        const diff = options.direction === Direction.forwards ? 2 : -2;
+        let first = true;
+        do {
+            const wordRange = document.getWordRangeAtPosition(searchPosition);
+            
+            if (wordRange) {
+                if (!first || options.currentInclusive) {
+                    setVirtualColumn(searchPosition.character);
+                    yield wordRange;
+                }
+                
+                searchPosition = positions.translateWithWrap(
+                    document,
+                    wordRange[
+                        options.direction === Direction.forwards ? "end" : "start"
+                    ],
+                    diff
+                );
+            } else {
+                searchPosition = positions.translateWithWrap(
+                    document,
+                    searchPosition,
+                    diff
+                );
+            }
+            
+            first = false;
+        } while (searchPosition);
+    });
 }
 
 function iterAll(
@@ -229,7 +273,7 @@ export default class WordIO extends SubjectIOBase {
 
     iterAll = iterAll;
     iterVertically = iterVertically;
-    iterHorizontally = iterAll;
+    iterHorizontally = iterHorizontally;
 
     swapHorizontally = swapHorizontally;
     swapVertically = swapVertically;

@@ -10,9 +10,9 @@ import SubjectBase from "../subjects/SubjectBase";
 import { SubjectAction } from "../subjects/SubjectActions";
 import JumpInterface from "../handlers/JumpInterface";
 import { SubjectName } from "../subjects/SubjectName";
+import { setLastSkip, getLastSkip } from "../skipState";
 
 export default class CommandMode extends modes.EditorMode {
-    private lastSkip: common.Skip | undefined = undefined;
 
     readonly cursorStyle = vscode.TextEditorCursorStyle.LineThin;
     readonly lineNumberStyle = vscode.TextEditorLineNumbersStyle.Relative;
@@ -24,11 +24,12 @@ export default class CommandMode extends modes.EditorMode {
     readonly decorationTypeBottom: vscode.TextEditorDecorationType;
 
     get statusBarText(): string {
+        const lastSkip = getLastSkip();
         const skipString =
-            this.lastSkip?.kind === "SkipTo"
-                ? ` | Skip: ${this.lastSkip.char}`
-                : this.lastSkip?.kind === "SkipOver"
-                ? ` | Skip over: ${this.lastSkip.char || "¶"}`
+            lastSkip?.kind === "SkipTo"
+                ? ` | Skip: ${lastSkip.char}`
+                : lastSkip?.kind === "SkipOver"
+                ? ` | Skip over: ${lastSkip.char || "¶"}`
                 : ``;
 
         return `Command mode (${this.subject.displayName})${skipString}`;
@@ -192,9 +193,9 @@ export default class CommandMode extends modes.EditorMode {
             return;
         }
 
-        this.lastSkip = { kind: "SkipTo", char: skipChar };
+        setLastSkip({ kind: "SkipTo", char: skipChar });
 
-        await this.subject.skip(direction, this.lastSkip);
+        await this.subject.skip(direction, { kind: "SkipTo", char: skipChar });
     }
 
     async skipOver(direction: common.Direction): Promise<void> {
@@ -203,17 +204,18 @@ export default class CommandMode extends modes.EditorMode {
             true
         );
 
-        this.lastSkip = { kind: "SkipOver", char: skipChar };
+        setLastSkip({ kind: "SkipOver", char: skipChar });
 
-        await this.subject.skip(direction, this.lastSkip);
+        await this.subject.skip(direction, { kind: "SkipOver", char: skipChar });
     }
 
     async repeatLastSkip(direction: common.Direction): Promise<void> {
-        if (!this.lastSkip) {
+        const lastSkip = getLastSkip();
+        if (!lastSkip) {
             return;
         }
 
-        await this.subject.skip(direction, this.lastSkip);
+        await this.subject.skip(direction, lastSkip);
     }
 
     async jump(): Promise<void> {
