@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import SubwordIO from "../io/SubwordIO";
 import SubjectBase from "./SubjectBase";
+import { colorConfig } from "../config";
 
 export default class SubwordSubject extends SubjectBase {
     public readonly name = "SUBWORD";
     public readonly displayName = "subword";
     public readonly outlineColour = {
-        dark: "#ff6699",
+        dark: `#${colorConfig.subWord}`,
         light: "#ff6699",
     } as const;
     protected readonly subjectIO = new SubwordIO();

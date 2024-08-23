@@ -2,10 +2,14 @@ import * as vscode from "vscode";
 import LineIO from "../io/LineIO";
 import * as selections from "../utils/selectionsAndRanges";
 import SubjectBase from "./SubjectBase";
+import { colorConfig } from "../config";
 
 export default class LineSubject extends SubjectBase {
     protected subjectIO = new LineIO();
-    public outlineColour = { dark: "#8feb34", light: "#66CDAA" } as const;
+    public outlineColour = { 
+        dark: `#${colorConfig.line}`,
+        light: "#66CDAA" 
+    } as const;
     public readonly name = "LINE";
     public readonly displayName = "line";
     public readonly jumpPhaseType = "single-phase";

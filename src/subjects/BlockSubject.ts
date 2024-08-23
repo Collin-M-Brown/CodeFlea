@@ -1,5 +1,6 @@
 import SubjectBase from "./SubjectBase";
 import BlockIO from "../io/BlockIO";
+import { colorConfig } from "../config";
 
 export default class BlockSubject extends SubjectBase {
     protected subjectIO = new BlockIO();
@@ -7,7 +8,7 @@ export default class BlockSubject extends SubjectBase {
     readonly displayName = "block";
     public readonly jumpPhaseType = "single-phase";
     public readonly outlineColour = {
-        dark: "#aba246",
+        dark: `#${colorConfig.block}`,
         light: "#aba246",
     } as const;
 }
