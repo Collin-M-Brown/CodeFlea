@@ -11,6 +11,7 @@ export type IterationOptions = {
     direction: Direction;
     currentInclusive?: boolean;
     bounds?: TextObject;
+    isVertical?: boolean;
 };
 
 export default abstract class SubjectIOBase {

@@ -39,8 +39,8 @@ function iterVertically(
                         column
                     );
                     const wordRange = findWordClosestTo(document, newPosition, {
-                        limitToCurrentLine: true,
-                    });
+                            limitToCurrentLine: true,
+                            isVertical: true });
                     
                     if (wordRange) {
                         yield wordRange;
@@ -146,7 +146,7 @@ function getContainingWordAt(
 function findWordClosestTo(
     document: vscode.TextDocument,
     position: vscode.Position,
-    options: { limitToCurrentLine: boolean }
+    options: { limitToCurrentLine: boolean, isVertical: boolean },
 ): vscode.Range {
     const wordUnderCursor = document.getWordRangeAtPosition(position);
 
@@ -160,10 +160,12 @@ function findWordClosestTo(
         iterObjects(document, {
             startingPosition: position,
             direction: Direction.backwards,
+            isVertical: options.isVertical,
         }).tryFirst(),
         iterObjects(document, {
             startingPosition: position,
             direction: Direction.forwards,
+            isVertical: options.isVertical,
         }).tryFirst(),
     ])
         .filterUndefined()
@@ -232,14 +234,17 @@ function iterScope(
 
             if (wordRange) {
                 if (options.currentInclusive || !first) {
+                    if (!options.isVertical) {
+                        common.setVirtualColumn(searchPosition.character);
+                    }
                     yield wordRange;
                 }
-
+                
                 searchPosition = positions.translateWithWrap(
                     document,
                     options.direction === Direction.forwards
-                        ? wordRange.end
-                        : wordRange.start,
+                    ? wordRange.end
+                    : wordRange.start,
                     diff
                 );
             } else {
@@ -249,12 +254,11 @@ function iterScope(
                     diff
                 );
             }
-
+            
             first = false;
         } while (searchPosition && searchPosition.line === startingLine);
     });
 }
-
 export default class WordIO extends SubjectIOBase {
     deletableSeparators = /^[\s,.:=+\-*\/%]+$/;
     defaultSeparationText = " ";
@@ -267,6 +271,7 @@ export default class WordIO extends SubjectIOBase {
     ) {
         return findWordClosestTo(document, position, {
             limitToCurrentLine: false,
+            isVertical: false
         });
     }
 

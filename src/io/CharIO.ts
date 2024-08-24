@@ -72,20 +72,31 @@ function iterAll(
         );
         let maxOffset = document.getText().length;
 
+        let columnExtreeme = getVirtualColumn();
+
         while (offset >= 0 && offset < maxOffset) {
             const nextOffset = directionToDelta(options.direction)(offset);
             const range = new Range(
                 document.positionAt(offset),
                 document.positionAt(nextOffset)
             );
-
             if (
                 !range.isEmpty &&
                 range.isSingleLine &&
                 (range.start.character === 0 ||
                     document.getText(range) !== "\n")
-            )
+            ) {
+                if (options.direction === Direction.forwards) {
+                    if (columnExtreeme < range.start.character)
+                        columnExtreeme = range.start.character;
+                    setVirtualColumn(columnExtreeme);
+                }
+                else if (columnExtreeme > range.start.character) {
+                    columnExtreeme = range.start.character;
+                    setVirtualColumn(columnExtreeme);
+                }
                 yield range;
+            }
 
             offset = nextOffset;
         }
