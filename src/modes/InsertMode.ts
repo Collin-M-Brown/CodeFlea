@@ -4,6 +4,8 @@ import ExtendMode from "./ExtendMode";
 import { EditorMode, EditorModeChangeRequest } from "./modes";
 import CommandMode from "./CommandMode";
 import * as subjects from "../subjects/subjects";
+import { SubjectName } from "../subjects/SubjectName";
+import JumpInterface from "../handlers/JumpInterface";
 
 export default class InsertMode extends EditorMode {
     private keySequenceStarted: boolean = false;
@@ -56,5 +58,51 @@ export default class InsertMode extends EditorMode {
     async skip() {}
     async skipOver() {}
     async jump() {}
-    async jumpToSubject() { return undefined; }
+    
+    async jumpToSubject(subjectName: SubjectName): Promise<EditorMode | undefined> {
+        const tempCommandMode = new CommandMode(this.context, subjects.createFrom(this.context, subjectName));
+        const result = await tempCommandMode.jumpToSubject(subjectName);
+        if (result) {
+            // Preserve the cursor position after jump
+            const jumpPosition = this.context.editor.selection.active;
+            this.context.editor.selection = new vscode.Selection(jumpPosition, jumpPosition);
+            return this;  // Stay in insert mode after jump
+        }
+        return undefined;
+    }
+    
+    async pullSubject(subjectName: SubjectName) {
+        const tempSubject = subjects.createFrom(this.context, subjectName);
+
+        const jumpLocations = tempSubject
+            .iterAll(
+                common.IterationDirection.alternate,
+                this.context.editor.visibleRanges[0]
+            )
+            .map((range) => range.start);
+
+        const jumpInterface = new JumpInterface(this.context);
+
+        const jumpPosition = await jumpInterface.jump({
+            kind: tempSubject.jumpPhaseType,
+            locations: jumpLocations,
+        });
+
+        if (jumpPosition) {
+            const currentSelection = this.context.editor.selection;
+            const pulledRange = await tempSubject.pullSubject(
+                this.context.editor.document,
+                jumpPosition,
+                currentSelection
+            );
+
+            if (pulledRange) {
+                this.context.editor.selection = new vscode.Selection(pulledRange.start, pulledRange.end);
+                await this.fixSelection();
+            }
+        }
+
+        return undefined;
+    }
+    
 }

@@ -11,6 +11,7 @@ export type EditorModeChangeRequest =
           kind: "COMMAND" | "EXTEND";
           subjectName?: SubjectName;
           half?: "LEFT" | "RIGHT";
+          subjectRegex?: number;
       };
 
 export abstract class EditorMode implements vscode.Disposable {
@@ -35,6 +36,9 @@ export abstract class EditorMode implements vscode.Disposable {
     abstract repeatLastSkip(direction: Direction): Promise<void>;
     abstract jump(): Promise<void>;
     abstract jumpToSubject(
+        subjectName: string
+    ): Promise<EditorMode | undefined>;
+    abstract pullSubject(
         subjectName: string
     ): Promise<EditorMode | undefined>;
 }

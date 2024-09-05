@@ -3,6 +3,7 @@ import * as editor from "./utils/editor";
 import type CodeFleaManager from "./CodeFleaManager";
 import { collapseSelections } from "./utils/selectionsAndRanges";
 import { Direction } from "./common";
+import { setWordDefinition, nextWordDefinition, prevWordDefinition } from "./config";
 
 type ExtensionCommand = {
     id: string;
@@ -116,6 +117,24 @@ export const registeredCommands: ExtensionCommand[] = [
     {
         id: "codeFlea.changeToWordSubject",
         execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(0);
+            manager.changeMode({
+                kind: "COMMAND",
+                subjectName: "WORD",
+                subjectRegex: 0,
+            });
+        },
+    },
+    {
+        id: "codeFlea.jumpToWordSubject",
+        execute: async (manager: CodeFleaManager) => {
+            manager.jumpToSubject('WORD');
+        },
+    },
+    {
+        id: "codeFlea.nextWordDefinition",
+        execute: async (manager: CodeFleaManager) => {
+            nextWordDefinition();
             manager.changeMode({
                 kind: "COMMAND",
                 subjectName: "WORD",
@@ -123,8 +142,63 @@ export const registeredCommands: ExtensionCommand[] = [
         },
     },
     {
-        id: "codeFlea.jumpToWordSubject",
+        id: "codeFlea.prevWordDefinition",
         execute: async (manager: CodeFleaManager) => {
+            prevWordDefinition();
+            manager.changeMode({
+                kind: "COMMAND",
+                subjectName: "WORD",
+            });
+        },
+    },
+    {
+        id: "codeFlea.changeToCustomWord1",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(1);
+            manager.changeMode({
+                kind: "COMMAND",
+                subjectName: "WORD",
+            });
+        },
+    },
+    {
+        id: "codeFlea.jumpToCustomWord1",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(1);
+            manager.jumpToSubject('WORD');
+        },
+    },
+    {
+        id: "codeFlea.changeToCustomWord2",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(2);
+            manager.changeMode({
+                kind: "COMMAND",
+                subjectName: "WORD",
+            });
+        },
+    },
+    {
+        id: "codeFlea.jumpToCustomWord2",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(2);
+            manager.jumpToSubject('WORD');
+        },
+    },
+    {
+        id: "codeFlea.changeToCustomWord3",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(3);
+            manager.changeMode({
+                kind: "COMMAND",
+                subjectName: "WORD",
+            });
+        },
+    },
+    {
+        id: "codeFlea.jumpToCustomWord3",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(3);
             manager.jumpToSubject('WORD');
         },
     },
@@ -314,24 +388,28 @@ export const registeredCommands: ExtensionCommand[] = [
     {
         id: "codeFlea.repeatLastSkip",
         execute: async (manager) => {
+            // TODO: switch to last mode if not already in it
             await manager.repeatLastSkip(Direction.forwards);
         },
     },
     {
         id: "codeFlea.repeatLastSkipBackwards",
         execute: async (manager) => {
+            // TODO: switch to last mode if not already in it
             await manager.repeatLastSkip(Direction.backwards);
         },
     },
     {
         id: "codeFlea.skip",
         execute: async (manager) => {
+            // TODO: cache direction
             await manager.skip(Direction.forwards);
         },
     },
     {
         id: "codeFlea.skipBackwards",
         execute: async (manager) => {
+            // TODO: cache direction
             await manager.skip(Direction.backwards);
         },
     },
@@ -481,6 +559,59 @@ export const registeredCommands: ExtensionCommand[] = [
         id: "codeFlea.transformToCamelCase",
         execute: async (manager) => {
             await manager.executeModifyCommand("transformToCamelCase");
+        },
+    },
+
+    {
+        id: "codeFlea.pullSubword",
+        execute: async (manager: CodeFleaManager) => {
+            manager.pullSubject('SUBWORD');
+        },
+    },
+    {
+        id: "codeFlea.pullWord",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(0);
+            manager.pullSubject('WORD');
+        },
+    },
+    {
+        id: "codeFlea.pullCustomWord1",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(1);
+            manager.pullSubject('WORD');
+        },
+    },
+    {
+        id: "codeFlea.pullCustomWord2",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(2);
+            manager.pullSubject('WORD');
+        },
+    },
+    {
+        id: "codeFlea.pullCustomWord3",
+        execute: async (manager: CodeFleaManager) => {
+            setWordDefinition(3);
+            manager.pullSubject('WORD');
+        },
+    },
+    {
+        id: "codeFlea.pullBracketSubject",
+        execute: async (manager: CodeFleaManager) => {
+            manager.pullSubject('BRACKETS');
+        },
+    },
+    {
+        id: "codeFlea.pullLineSubject",
+        execute: async (manager: CodeFleaManager) => {
+            manager.pullSubject('LINE');
+        },
+    },
+    {
+        id: "codeFlea.pullBlockSubject",
+        execute: async (manager: CodeFleaManager) => {
+            manager.pullSubject('BLOCK');
         },
     },
 ];

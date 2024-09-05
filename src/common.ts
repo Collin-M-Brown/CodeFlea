@@ -6,6 +6,8 @@ export type DirectionOrNearest = Direction | "nearest";
 export let lastSkip: Skip | undefined = undefined;
 export let column: number = 0;
 
+export let blockCache: vscode.Range[] = [];
+
 export type SubTextRange = {
     text: string;
     range: { start: number; end: number };
@@ -17,6 +19,11 @@ export const Direction = {
     backwards: "backwards",
     forwards: "forwards",
 } as const;
+
+export function OppositeDirection(direction: Direction) {
+    return direction === Direction.forwards ? Direction.backwards : Direction.forwards;
+}
+
 
 export type Direction = typeof Direction[keyof typeof Direction];
 
@@ -93,4 +100,16 @@ export function setVirtualColumn(newColumn: number): void {
 
 export function getVirtualColumn(): number {
     return column;
+}
+
+export function cacheBlockRange(range: vscode.Range): void {
+    blockCache.push(range);
+}
+
+export function popBlockRange(): vscode.Range | undefined {
+    return blockCache.pop();
+}
+
+export function clearBlockCache(): void {
+    blockCache = [];
 }

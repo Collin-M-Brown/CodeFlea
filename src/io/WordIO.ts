@@ -10,6 +10,7 @@ import {
 import * as editor from "../utils/editor";
 import SubjectIOBase, { IterationOptions } from "./SubjectIOBase";
 import { Direction, TextObject } from "../common";
+import { getWordDefinition } from "../config";
 
 function iterVertically(
     document: vscode.TextDocument,
@@ -54,44 +55,83 @@ function iterVertically(
     );
 }
 
+
 function iterHorizontally(
     document: vscode.TextDocument,
     options: IterationOptions
 ): Seq<TextObject> {
     return seq(function* () {
-        let searchPosition: vscode.Position | undefined = rangeToPosition(
-            options.startingPosition,
-            options.direction
-        );
+        if (!(options.startingPosition instanceof vscode.Range))
+            return;
 
-        const diff = options.direction === Direction.forwards ? 2 : -2;
-        let first = true;
-        do {
-            const wordRange = document.getWordRangeAtPosition(searchPosition);
-            
-            if (wordRange) {
-                if (!first || options.currentInclusive) {
-                    common.setVirtualColumn(searchPosition.character);
-                    yield wordRange;
-                }
-                
-                searchPosition = positions.translateWithWrap(
-                    document,
-                    wordRange[
-                        options.direction === Direction.forwards ? "end" : "start"
-                    ],
-                    diff
-                );
-            } else {
-                searchPosition = positions.translateWithWrap(
-                    document,
-                    searchPosition,
-                    diff
-                );
+        let currentLine = options.startingPosition.start.line;
+        let startChar = options.direction === Direction.forwards 
+            ? options.startingPosition.end.character 
+            : options.startingPosition.start.character;
+
+        while (currentLine >= 0 && currentLine < document.lineCount) {
+            const fullLine = document.lineAt(currentLine);
+
+            const wordRegex = getWordDefinition();
+            if (!wordRegex) {
+                return;
             }
-            
-            first = false;
-        } while (searchPosition);
+
+            let match: RegExpMatchArray | null;
+            let searchText: string;
+
+            if (options.direction === Direction.forwards) {
+                searchText = fullLine.text.slice(startChar);
+                match = searchText.match(wordRegex);
+            } else {
+                searchText = fullLine.text.slice(0, startChar);
+                const matches = Array.from(searchText.matchAll(new RegExp(wordRegex, 'g')));
+                match = matches.length > 0 ? matches[matches.length - 1] : null;
+            }
+
+            if (match) {
+                let matchStart: number, matchEnd: number;
+                if (options.direction === Direction.forwards) {
+                    matchStart = startChar + (match.index || 0);
+                    matchEnd = matchStart + match[0].length;
+                } else {
+                    matchStart = (match.index || 0);
+                    matchEnd = matchStart + match[0].length;
+                }
+
+                const matchRange = new vscode.Range(currentLine, matchStart, currentLine, matchEnd);
+                
+                
+                if (options.direction === Direction.forwards)
+                    common.setVirtualColumn(matchRange.end.character);
+                else
+                    common.setVirtualColumn(matchRange.start.character);    
+                yield matchRange;
+                return;
+            } else {
+                
+                if (options.direction === Direction.forwards) {
+                    if (startChar < fullLine.range.end.character) {
+                        const endOfLineRange = new vscode.Range(currentLine, startChar, currentLine, fullLine.range.end.character);
+                        common.setVirtualColumn(fullLine.range.end.character);
+                        yield endOfLineRange;
+                        return;
+                    }
+                    currentLine++;
+                    startChar = 0;
+                } else {
+                    if (startChar > 0) {
+                        const startOfLineRange = new vscode.Range(currentLine, 0, currentLine, startChar);
+                        common.setVirtualColumn(0);
+                        yield startOfLineRange;
+                        return;
+                    }
+                    currentLine--;
+                    startChar = document.lineAt(currentLine).range.end.character;
+                }
+            }
+        }
+
     });
 }
 
@@ -108,8 +148,8 @@ function iterAll(
         const diff = options.direction === Direction.forwards ? 2 : -2;
         let first = true;
 
-        do {
-            const wordRange = document.getWordRangeAtPosition(searchPosition);
+        while (searchPosition && (!options.bounds || options.bounds.contains(searchPosition))) {
+            const wordRange = document.getWordRangeAtPosition(searchPosition, getWordDefinition());
 
             if (wordRange) {
                 if (!first || options.currentInclusive) {
@@ -132,7 +172,7 @@ function iterAll(
             }
 
             first = false;
-        } while (searchPosition);
+        }
     });
 }
 
@@ -140,7 +180,9 @@ function getContainingWordAt(
     document: vscode.TextDocument,
     position: vscode.Position
 ): vscode.Range | undefined {
-    return document.getWordRangeAtPosition(position);
+    if (!position)
+        return;
+    return document.getWordRangeAtPosition(position, getWordDefinition(false));
 }
 
 function findWordClosestTo(
@@ -148,7 +190,7 @@ function findWordClosestTo(
     position: vscode.Position,
     options: { limitToCurrentLine: boolean, isVertical: boolean },
 ): vscode.Range {
-    const wordUnderCursor = document.getWordRangeAtPosition(position);
+    const wordUnderCursor = document.getWordRangeAtPosition(position, getWordDefinition());
 
     if (wordUnderCursor) {
         return wordUnderCursor;
@@ -223,14 +265,15 @@ function iterScope(
             options.startingPosition,
             options.direction
         );
-
+        if (!searchPosition)
+            return;
         const startingLine = searchPosition.line;
 
         const diff = options.direction === Direction.forwards ? 2 : -2;
         let first = true;
 
         do {
-            const wordRange = document.getWordRangeAtPosition(searchPosition);
+            const wordRange = document.getWordRangeAtPosition(searchPosition, getWordDefinition());
 
             if (wordRange) {
                 if (options.currentInclusive || !first) {
@@ -260,7 +303,7 @@ function iterScope(
     });
 }
 export default class WordIO extends SubjectIOBase {
-    deletableSeparators = /^[\s,.:=+\-*\/%]+$/;
+    deletableSeparators = /^[.\s,=+\*\/%]+$/;
     defaultSeparationText = " ";
 
     getContainingObjectAt = getContainingWordAt;

@@ -266,4 +266,22 @@ export default abstract class SubjectIOBase {
 
         return nextObject;
     }
+
+    async pullSubject(
+        document: vscode.TextDocument,
+        targetPosition: vscode.Position,
+        currentSelection: vscode.Selection
+    ): Promise<vscode.Range | undefined> {
+        const targetObject = this.getContainingObjectAt(document, targetPosition);
+        if (!targetObject) return undefined;
+        
+        const edit = new vscode.WorkspaceEdit();
+        const targetText = document.getText(targetObject).trim();
+        edit.replace(document.uri, currentSelection, targetText);
+        
+        await vscode.workspace.applyEdit(edit);
+
+        return new vscode.Range(currentSelection.start, currentSelection.start.translate(0, targetText.length));
+    }
+
 }

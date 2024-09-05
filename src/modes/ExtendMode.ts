@@ -175,6 +175,16 @@ export default class ExtendMode extends EditorMode {
 
         return newMode;
     }
+    
+    async pullSubject(subjectName: SubjectName): Promise<EditorMode | undefined> {
+        let newMode: EditorMode | undefined = undefined;
+
+        await this.extendSelections(async () => {
+            newMode = await this.wrappedMode.pullSubject(subjectName);
+        });
+
+        return newMode;
+    }
 
     private async extendSelections(movement: () => Promise<void>) {
         this.context.editor.selections = this.actives;

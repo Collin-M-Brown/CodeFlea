@@ -255,6 +255,22 @@ export default class CodeFleaManager {
     async jumpToSubject(subjectName: SubjectName) {
         const newMode = await this.mode.jumpToSubject(subjectName);
 
+
+        if (newMode === undefined) return;
+
+        this.clearSelections();
+        this.mode = newMode;
+
+        this.setUI();
+        this.mode.fixSelection();
+
+        this.setDecorations();
+    }
+
+    async pullSubject(subjectName: SubjectName) {
+        const newMode = await this.mode.pullSubject(subjectName);
+
+
         if (newMode === undefined) return;
 
         this.clearSelections();

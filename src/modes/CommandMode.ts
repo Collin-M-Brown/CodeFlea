@@ -38,18 +38,24 @@ export default class CommandMode extends modes.EditorMode {
         private readonly context: common.ExtensionContext,
         public readonly subject: SubjectBase
     ) {
+
+        vscode.commands.executeCommand(
+            "setContext",
+            "codeFlea.subject",
+            subject.name
+        );
         super();
 
         this.decorationType = vscode.window.createTextEditorDecorationType({
             dark: {
                 borderStyle: "solid",
                 borderColor: subject.outlineColour.dark,
-                borderWidth: "1px",
+                borderWidth: "2px",
             },
             light: {
                 borderStyle: "solid",
                 borderColor: subject.outlineColour.light,
-                borderWidth: "1px",
+                borderWidth: "2px",
             },
         });
 
@@ -148,7 +154,7 @@ export default class CommandMode extends modes.EditorMode {
                         return this.with({
                             subject: subjects.createFrom(
                                 this.context,
-                                "INTERWORD"
+                                "WORD",
                             ),
                         });
                     case "INTERWORD":
@@ -233,8 +239,10 @@ export default class CommandMode extends modes.EditorMode {
         });
 
         if (jumpPosition) {
+
             this.context.editor.selection =
                 selections.positionToSelection(jumpPosition);
+
 
             await this.fixSelection();
         }
@@ -263,5 +271,40 @@ export default class CommandMode extends modes.EditorMode {
 
             return await this.changeTo({ kind: "COMMAND", subjectName });
         }
+    }
+    
+    async pullSubject(subjectName: SubjectName) {
+
+        const tempSubject = subjects.createFrom(this.context, subjectName);
+
+        const jumpLocations = tempSubject
+            .iterAll(
+                common.IterationDirection.alternate,
+                this.context.editor.visibleRanges[0]
+            )
+            .map((range) => range.start);
+
+        const jumpInterface = new JumpInterface(this.context);
+
+        const jumpPosition = await jumpInterface.jump({
+            kind: tempSubject.jumpPhaseType,
+            locations: jumpLocations,
+        });
+
+        if (jumpPosition) {
+            const currentSelection = this.context.editor.selection;
+            const pulledRange = await tempSubject.pullSubject(
+                this.context.editor.document,
+                jumpPosition,
+                currentSelection
+            );
+
+            if (pulledRange) {
+                this.context.editor.selection = new vscode.Selection(pulledRange.start, pulledRange.end);
+                await this.fixSelection();
+            }
+        }
+
+        return undefined;
     }
 }

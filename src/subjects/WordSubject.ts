@@ -1,13 +1,13 @@
 import WordIO from "../io/WordIO";
 import SubjectBase from "./SubjectBase";
-import { colorConfig } from "../config";
+import { getWordColor } from "../config";
 
 export default class WordSubject extends SubjectBase {
     protected subjectIO = new WordIO();
 
     public readonly outlineColour = {
-        dark: `#${colorConfig.word}`,
-        light: "#964d4d",
+        dark: `#${getWordColor()}`,
+        light: `#${getWordColor()}`,
     } as const;
 
     public readonly name = "WORD";

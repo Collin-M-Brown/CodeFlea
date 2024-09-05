@@ -19,6 +19,12 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.onDidChangeTextEditorSelection(async (e) => {
         await manager.onDidChangeTextEditorSelection(e);
     });
+    
+    vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration("codeFlea")) {
+            loadConfig();
+        }
+    });
 
     for (const command of registeredCommands) {
         context.subscriptions.push(
@@ -27,4 +33,5 @@ export function activate(context: vscode.ExtensionContext) {
             )
         );
     }
+
 }

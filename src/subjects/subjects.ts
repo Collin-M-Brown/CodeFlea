@@ -12,7 +12,7 @@ import CharSubject from "./CharSubject";
 
 export function createFrom(
     context: common.ExtensionContext,
-    subjectName: SubjectName
+    subjectName: SubjectName,
 ): SubjectBase {
     switch (subjectName) {
         case "LINE":
@@ -31,5 +31,6 @@ export function createFrom(
             return new OutsideBracketSubject(context);
         case "CHAR":
             return new CharSubject(context);
+        
     }
 }

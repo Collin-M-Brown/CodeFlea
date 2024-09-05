@@ -2,13 +2,13 @@ import * as vscode from "vscode";
 import LineIO from "../io/LineIO";
 import * as selections from "../utils/selectionsAndRanges";
 import SubjectBase from "./SubjectBase";
-import { colorConfig } from "../config";
+import { getLineColor } from "../config";
 
 export default class LineSubject extends SubjectBase {
     protected subjectIO = new LineIO();
     public outlineColour = { 
-        dark: `#${colorConfig.line}`,
-        light: "#66CDAA" 
+        dark: `#${getLineColor()}`,
+        light: `#${getLineColor()}`,
     } as const;
     public readonly name = "LINE";
     public readonly displayName = "line";

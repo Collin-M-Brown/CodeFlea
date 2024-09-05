@@ -300,7 +300,7 @@ export default abstract class SubjectBase implements SubjectActions {
                     ? startRange
                     : endRange;
 
-            if (fixedRange && !fixedRange.isEmpty) {
+                    if (fixedRange && !fixedRange.isEmpty) {
                 return new vscode.Selection(fixedRange.end, fixedRange.start);
             }
 
@@ -339,5 +339,13 @@ export default abstract class SubjectBase implements SubjectActions {
             startingPosition: this.context.editor.selection,
             direction,
         });
+    }
+    
+    async pullSubject(
+        document: vscode.TextDocument,
+        targetPosition: vscode.Position,
+        currentSelection: vscode.Selection
+    ): Promise<vscode.Range | undefined> {
+        return this.subjectIO.pullSubject(document, targetPosition, currentSelection);
     }
 }

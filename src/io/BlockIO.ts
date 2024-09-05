@@ -57,10 +57,10 @@ function iterBlockStarts(
 
             const startLine = document.lineAt(
                 options.startingPosition instanceof vscode.Range
-                ? options.startingPosition.start
-                : options.startingPosition
+                    ? options.startingPosition.start
+                    : options.startingPosition
             );
-            
+
             for (const { prev, current } of documentLines) {
                 if (
                     !options.currentInclusive &&
