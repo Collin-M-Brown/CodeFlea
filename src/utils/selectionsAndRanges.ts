@@ -80,7 +80,7 @@ export function tryMap(
 ) {
     editor.selections = editor.selections.map((selection) => {
         const rangeOrSelection = mapper(selection);
-
+        
         if (!rangeOrSelection) {
             return selection;
         } else if (rangeOrSelection instanceof vscode.Selection) {

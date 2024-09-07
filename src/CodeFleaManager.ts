@@ -209,7 +209,7 @@ export default class CodeFleaManager {
             await choice.execute();
         }
     }
-
+    
     async customVsCodeCommand() {
         const command = await vscode.window.showInputBox({
             prompt: "Custom VS Code command",
@@ -249,10 +249,12 @@ export default class CodeFleaManager {
     }
 
     async jump() {
+        await vscode.commands.executeCommand("editor.action.setSelectionAnchor");
         await this.mode.jump();
     }
 
     async jumpToSubject(subjectName: SubjectName) {
+        await vscode.commands.executeCommand("editor.action.setSelectionAnchor");
         const newMode = await this.mode.jumpToSubject(subjectName);
 
 

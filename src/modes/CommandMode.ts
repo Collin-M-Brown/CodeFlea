@@ -10,6 +10,7 @@ import SubjectBase from "../subjects/SubjectBase";
 import { SubjectAction } from "../subjects/SubjectActions";
 import JumpInterface from "../handlers/JumpInterface";
 import { SubjectName } from "../subjects/SubjectName";
+import { seq } from "../utils/seq";
 
 export default class CommandMode extends modes.EditorMode {
 
@@ -38,7 +39,7 @@ export default class CommandMode extends modes.EditorMode {
         private readonly context: common.ExtensionContext,
         public readonly subject: SubjectBase
     ) {
-
+        
         vscode.commands.executeCommand(
             "setContext",
             "codeFlea.subject",
@@ -223,46 +224,41 @@ export default class CommandMode extends modes.EditorMode {
         await this.subject.skip(direction, lastSkip);
     }
 
+    
     async jump(): Promise<void> {
+        const combinedRange = this.context.editor.visibleRanges.reduce((acc, range) => acc.union(range));
         const jumpLocations = this.subject
-            .iterAll(
-                common.IterationDirection.alternate,
-                this.context.editor.visibleRanges[0]
-            )
-            .map((range) => range.start);
-
+            .iterAll(common.IterationDirection.alternate, combinedRange)
+            .map((range) => range.start)
+            .toArray();
+            
         const jumpInterface = new JumpInterface(this.context);
-
+    
         const jumpPosition = await jumpInterface.jump({
             kind: this.subject.jumpPhaseType,
-            locations: jumpLocations,
+            locations: seq(jumpLocations),
         });
-
+    
         if (jumpPosition) {
-
-            this.context.editor.selection =
-                selections.positionToSelection(jumpPosition);
-
-
+            this.context.editor.selection = selections.positionToSelection(jumpPosition);
             await this.fixSelection();
+            await vscode.commands.executeCommand('revealLine', {lineNumber: this.context.editor.selection.active.line, at: 'center'});
         }
     }
 
     async jumpToSubject(subjectName: SubjectName) {
         const tempSubject = subjects.createFrom(this.context, subjectName);
-
+        const combinedRange = this.context.editor.visibleRanges.reduce((acc, range) => acc.union(range));
         const jumpLocations = tempSubject
-            .iterAll(
-                common.IterationDirection.alternate,
-                this.context.editor.visibleRanges[0]
-            )
-            .map((range) => range.start);
+            .iterAll(common.IterationDirection.alternate, combinedRange)
+            .map((range) => range.start)
+            .toArray();
 
         const jumpInterface = new JumpInterface(this.context);
 
         const jumpPosition = await jumpInterface.jump({
             kind: tempSubject.jumpPhaseType,
-            locations: jumpLocations,
+            locations: seq(jumpLocations),
         });
 
         if (jumpPosition) {
@@ -274,21 +270,18 @@ export default class CommandMode extends modes.EditorMode {
     }
     
     async pullSubject(subjectName: SubjectName) {
-
         const tempSubject = subjects.createFrom(this.context, subjectName);
-
+        const combinedRange = this.context.editor.visibleRanges.reduce((acc, range) => acc.union(range));
         const jumpLocations = tempSubject
-            .iterAll(
-                common.IterationDirection.alternate,
-                this.context.editor.visibleRanges[0]
-            )
-            .map((range) => range.start);
+            .iterAll(common.IterationDirection.alternate, combinedRange)
+            .map((range) => range.start)
+            .toArray();
 
         const jumpInterface = new JumpInterface(this.context);
 
         const jumpPosition = await jumpInterface.jump({
             kind: tempSubject.jumpPhaseType,
-            locations: jumpLocations,
+            locations: seq(jumpLocations),
         });
 
         if (jumpPosition) {

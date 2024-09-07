@@ -300,7 +300,7 @@ export default abstract class SubjectBase implements SubjectActions {
                     ? startRange
                     : endRange;
 
-                    if (fixedRange && !fixedRange.isEmpty) {
+            if (fixedRange && !fixedRange.isEmpty) {
                 return new vscode.Selection(fixedRange.end, fixedRange.start);
             }
 
