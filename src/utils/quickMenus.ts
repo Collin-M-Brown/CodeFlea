@@ -330,6 +330,13 @@ export const SpaceCommands: QuickCommand[] = [
         },
     },
     {
+        quickKey: char("i"),
+        label: "Show Right Click Menu",
+        execute: async () => {
+            await vscode.commands.executeCommand("editor.action.showContextMenu");
+        },
+    },
+    {
         quickKey: char("1"),
         label: "Fold level 1",
         execute: async () => {

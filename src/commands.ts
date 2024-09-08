@@ -4,6 +4,7 @@ import type CodeFleaManager from "./CodeFleaManager";
 import { collapseSelections } from "./utils/selectionsAndRanges";
 import { Direction } from "./common";
 import { setWordDefinition, nextWordDefinition, prevWordDefinition } from "./config";
+import * as path from 'path';
 
 type ExtensionCommand = {
     id: string;
@@ -615,4 +616,21 @@ export const registeredCommands: ExtensionCommand[] = [
             manager.pullSubject('BLOCK');
         },
     },
+    {
+        id: "codeFlea.openTerminalAtFilePath",
+        execute: async () => {
+            const activeEditor = vscode.window.activeTextEditor;
+            if (activeEditor) {
+                const filePath = activeEditor.document.uri.fsPath;
+                const dirPath = path.dirname(filePath);
+                const unixDirPath = dirPath.replace(/\\/g, '/');
+                const terminal = vscode.window.createTerminal({
+                    name: "File Directory Terminal"
+                });
+                terminal.show();
+                // Change directory and show current path
+                terminal.sendText(`cd "${unixDirPath}" && pwd`, true);
+            }
+        },
+    }
 ];
